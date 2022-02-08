@@ -94,6 +94,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -153,13 +154,16 @@
     <ClInclude Include="cart.h" />
     <ClInclude Include="cpu.h" />
     <ClInclude Include="emu.h" />
+    <ClInclude Include="instructions.h" />
     <ClInclude Include="ppu.h" />
     <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bus.cpp" />
     <ClCompile Include="cart.cpp" />
     <ClCompile Include="cpu.cpp" />
     <ClCompile Include="emu.cpp" />
+    <ClCompile Include="instructions.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ppu.cpp" />
     <ClCompile Include="timer.cpp" />
