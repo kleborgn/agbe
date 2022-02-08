@@ -14,3 +14,5 @@ This project does not have the ambition to be accurate or complete, it's just a 
 [Opcodes](https://gbdev.io/gb-opcodes/optables/) - Game Boy CPU (SM83) instruction set
 
 [gbdev/awesome-gbdev](https://github.com/gbdev/awesome-gbdev) - A curated list of Game Boy development resources such as tools, docs, emulators, related projects and open-source ROMs. 
+
+[gbctr](https://gekkio.fi/files/gb-docs/gbctr.pdf) - Useful for detailed instructions
