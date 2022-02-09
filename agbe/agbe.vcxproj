@@ -158,6 +158,7 @@
     <ClInclude Include="instructions.h" />
     <ClInclude Include="ppu.h" />
     <ClInclude Include="ram.h" />
+    <ClInclude Include="stack.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="timer.h" />
   </ItemGroup>
@@ -171,6 +172,7 @@
     <ClCompile Include="ppu.cpp" />
     <ClCompile Include="process.cpp" />
     <ClCompile Include="ram.cpp" />
+    <ClCompile Include="stack.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
