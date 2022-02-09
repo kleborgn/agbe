@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "ppu.h"
 
 void ppu_init()

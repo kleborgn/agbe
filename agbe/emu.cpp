@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "emu.h"
 
 #include <iostream>

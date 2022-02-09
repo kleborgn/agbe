@@ -1,4 +1,5 @@
-﻿#include "timer.h"
+﻿#include "stdafx.h"
+#include "timer.h"
 
 void timer_init()
 {

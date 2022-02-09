@@ -1,4 +1,5 @@
-﻿#include "cart.h"
+﻿#include "stdafx.h"
+#include "cart.h"
 
 #include <cstdio>
 #include <iostream>
@@ -220,6 +221,13 @@ bool cart_load(char* cart)
     rewind(fp);
 
     ctx.rom_data = static_cast<uint8_t*>(malloc(ctx.rom_size));
+
+    if (ctx.rom_data == nullptr)
+    {
+        std::cout << "[-] Failed to allocate memory." << std::endl;
+        return false;
+    }
+
     fread(ctx.rom_data, ctx.rom_size, 1, fp);
     fclose(fp);
 
@@ -235,6 +243,13 @@ bool cart_load(char* cart)
     printf("\t ROM Vers : %2.2X\n", ctx.header->version);
 
     // Checksum
+
+    if (ctx.rom_size < 0x014C)
+    {
+        std::cout << "[-] Invalid ROM file." << std::endl;
+        return false;
+    }
+
     uint16_t x = 0;
     for(uint16_t i=0x0134; i<0x014C; i++)
     {

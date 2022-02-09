@@ -1,6 +1,8 @@
-﻿#include <iostream>
+﻿#include "stdafx.h"
+#include <iostream>
 #include <map>
 
+#include "bus.h"
 #include "cpu.h"
 #include "emu.h"
 
@@ -22,7 +24,43 @@ static void proc_di(cpu_context* ctx)
 
 static void proc_ld(cpu_context* ctx)
 {
-	//TODO
+	if (ctx->bDest)
+	{
+		if (ctx->cur_inst->reg_2 >= reg_type::RT_AF) // if 16 bits register
+		{
+			emu_cycles(1);
+			bus_write16(ctx->mem_dest, ctx->fetch_data);
+		} else
+		{
+			bus_write(ctx->mem_dest, static_cast<uint8_t>(ctx->fetch_data));
+		}
+		return;
+	}
+
+	if (ctx->cur_inst->mode == addr_mode::AM_HL_SPR)
+	{
+		uint8_t hflag = (cpu_read_reg(ctx->cur_inst->reg_2) & 0xF) + (ctx->fetch_data & 0xF) >= 0x10;
+		uint8_t cflag = (cpu_read_reg(ctx->cur_inst->reg_2) & 0xFF) + (ctx->fetch_data & 0xFF) >= 0x100;
+
+		cpu_set_flags(ctx, 0, 0, hflag, cflag);
+		cpu_set_reg(ctx->cur_inst->reg_1, cpu_read_reg(ctx->cur_inst->reg_2) + static_cast<char>(ctx->fetch_data));
+
+		return;
+	}
+	cpu_set_reg(ctx->cur_inst->reg_1, ctx->fetch_data);
+}
+
+static void proc_ldh(cpu_context *ctx)
+{
+	if (ctx->cur_inst->reg_1 == reg_type::RT_A)
+	{
+		cpu_set_reg(ctx->cur_inst->reg_1, bus_read(0xFF00 | ctx->fetch_data));
+	} else
+	{
+		bus_write(0xFF00 | ctx->fetch_data, ctx->regs.a);
+	}
+
+	emu_cycles(1);
 }
 
 void cpu_set_flags(cpu_context *ctx, char z, char n, char h, char c)
@@ -61,11 +99,11 @@ static bool check_cond(cpu_context* ctx)
 
 	switch (ctx->cur_inst->cond)
 	{
-		case CT_NONE: return true;
-		case CT_C: return c;
-		case CT_NC: return !c;
-		case CT_Z: return z;
-		case CT_NZ: return !z;
+		case cond_type::CT_NONE: return true;
+		case cond_type::CT_C: return c;
+		case cond_type::CT_NC: return !c;
+		case cond_type::CT_Z: return z;
+		case cond_type::CT_NZ: return !z;
 	}
 	return false;
 }
@@ -80,12 +118,13 @@ static void proc_jp(cpu_context* ctx)
 }
 
 static std::map<in_type, IN_PROC> processors = {
-	{IN_NONE, proc_none},
-	{IN_NOP, proc_nop},
-	{IN_LD, proc_ld},
-	{IN_JP, proc_jp},
-	{IN_DI, proc_di},
-	{IN_XOR, proc_xor}
+	{in_type::IN_NONE, proc_none},
+	{in_type::IN_NOP, proc_nop},
+	{in_type::IN_LD, proc_ld},
+	{in_type::IN_LDH, proc_ldh},
+	{in_type::IN_JP, proc_jp},
+	{in_type::IN_DI, proc_di},
+	{in_type::IN_XOR, proc_xor}
 };
 
 IN_PROC inst_get_processor(in_type type)
@@ -94,7 +133,7 @@ IN_PROC inst_get_processor(in_type type)
 	{
 		return processors.at(type);
 	}
-	catch (const std::out_of_range &e)
+	catch (std::out_of_range)
 	{
 		std::cerr << "[-] Unknown IN_TYPE: " << type << std::endl;
 	}

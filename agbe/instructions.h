@@ -51,7 +51,7 @@ typedef enum class reg_type {
     RT_PC
 } reg_type;
 
-typedef enum {
+typedef enum class in_type {
     IN_NONE,
     IN_NOP,
     IN_LD,
@@ -103,7 +103,13 @@ typedef enum {
     IN_SET
 } in_type;
 
-typedef enum {
+inline std::ostream& operator << (std::ostream& os, const in_type& obj)
+{
+    os << static_cast<std::underlying_type_t<in_type>>(obj);
+    return os;
+}
+
+typedef enum class cond_type {
     CT_NONE, CT_NZ, CT_Z, CT_NC, CT_C
 } cond_type;
 

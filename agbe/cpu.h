@@ -42,6 +42,7 @@ typedef struct
 	bool bStepping;
 
 	bool bInterrupt_master_enabled;
+	uint8_t ie_register;
 } cpu_context;
 
 void cpu_init();
@@ -51,3 +52,10 @@ typedef void (*IN_PROC)(cpu_context*);
 
 IN_PROC inst_get_processor(in_type type);
 
+uint16_t cpu_read_reg(reg_type rt);
+void cpu_set_reg(reg_type rt, uint16_t val);
+
+void cpu_set_flags(cpu_context* ctx, char z, char n, char h, char c);
+
+uint8_t cpu_get_ie_register();
+void cpu_set_ie_register(uint8_t value);

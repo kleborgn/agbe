@@ -95,6 +95,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,6 +157,8 @@
     <ClInclude Include="emu.h" />
     <ClInclude Include="instructions.h" />
     <ClInclude Include="ppu.h" />
+    <ClInclude Include="ram.h" />
+    <ClInclude Include="stdafx.h" />
     <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
@@ -167,6 +170,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ppu.cpp" />
     <ClCompile Include="process.cpp" />
+    <ClCompile Include="ram.cpp" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="timer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

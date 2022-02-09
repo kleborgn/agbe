@@ -1,4 +1,5 @@
-﻿#include "emu.h"
+﻿#include "stdafx.h"
+#include "emu.h"
 
 int main(int argc, char **argv)
 {
