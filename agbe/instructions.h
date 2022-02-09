@@ -118,4 +118,4 @@ typedef struct {
 
 instruction* instruction_by_opcode(uint8_t opcode);
 
-char* inst_name(in_type t);
+const char* inst_name(in_type t);

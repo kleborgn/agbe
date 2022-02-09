@@ -39,24 +39,24 @@ uint16_t cpu_read_reg(const reg_type rt) {
 
 void cpu_init() {
 	ctx.regs.pc = 0x100; //EP
+	ctx.regs.a = 0x01;
 }
 
 static void fetch_instruction()
 {
 	ctx.cur_opcode = bus_read(ctx.regs.pc++);
 	ctx.cur_inst = instruction_by_opcode(ctx.cur_opcode);
-
-	if(ctx.cur_inst == nullptr)
-	{
-		printf("[-] Unknown instruction: %02X\n", ctx.cur_inst->mode);
-		exit(-7);
-	}
 }
 
 static void fetch_data()
 {
 	ctx.mem_dest = 0;
 	ctx.bDest = false;
+
+	if (ctx.cur_inst == nullptr)
+	{
+		return;
+	}
 
 	switch (ctx.cur_inst->mode)
 	{
@@ -96,7 +96,14 @@ static void fetch_data()
 
 static void execute()
 {
-	std::cout << "[-] Not executing atm." << std::endl;
+	IN_PROC proc = inst_get_processor(ctx.cur_inst->type);
+
+	if (!proc)
+	{
+		NOT_IMPLEMENTED
+	}
+
+	proc(&ctx);
 }
 
 bool cpu_step() {
@@ -105,7 +112,18 @@ bool cpu_step() {
 		uint16_t pc = ctx.regs.pc;
 		fetch_instruction();
 		fetch_data();
-		printf("[+] Executing instruction: %02X\tPC: %04X\n", ctx.cur_opcode, pc);
+
+		printf("%04X: %-7s (%02X %02X %02X) A: %02X B: %02X C:%02X\n",
+			pc, inst_name(ctx.cur_inst->type), ctx.cur_opcode, bus_read(pc + 1), bus_read(pc + 2), ctx.regs.a, ctx.regs.b, ctx.regs.c);
+
+		//printf("[+] Executing instruction: %02X\tPC: %04X\n", ctx.cur_opcode, pc);
+
+		if (ctx.cur_inst == nullptr)
+		{
+			printf("[-] Unknown instruction: %02X\n", ctx.cur_inst->mode);
+			exit(-7);
+		}
+
 		execute();
 	}
     return true;

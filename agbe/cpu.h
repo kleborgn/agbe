@@ -3,6 +3,17 @@
 
 #include "instructions.h"
 
+#define BIT(a, n) ((a & (1 << n)) ? 1 : 0)
+
+#define BIT_SET(a, n, on) { if (on) a |= (1 << n); else a &= ~(1 << n);}
+
+#define BETWEEN(a, b, c) ((a >= b) && (a <= c))
+
+#define CPU_FLAG_Z BIT(ctx->regs.f, 7)
+#define CPU_FLAG_C BIT(ctx->regs.f, 4)
+
+#define NOT_IMPLEMENTED { fprintf(stderr, "NOT YET IMPLEMENTED\n"); exit(-5); }
+
 typedef struct
 {
 	uint8_t a;
@@ -29,7 +40,14 @@ typedef struct
 
 	bool bHalted;
 	bool bStepping;
+
+	bool bInterrupt_master_enabled;
 } cpu_context;
 
 void cpu_init();
 bool cpu_step();
+
+typedef void (*IN_PROC)(cpu_context*);
+
+IN_PROC inst_get_processor(in_type type);
+
