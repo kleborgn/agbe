@@ -109,13 +109,67 @@ static bool check_cond(cpu_context* ctx)
 	return false;
 }
 
-static void proc_jp(cpu_context* ctx)
+static void goto_addr(cpu_context *ctx, uint16_t address, bool bPushPc)
 {
 	if (check_cond(ctx))
 	{
-		ctx->regs.pc = ctx->fetch_data;
+		if (bPushPc)
+		{
+			emu_cycles(2);
+			stack_push16(ctx->regs.pc);
+		}
+		ctx->regs.pc = address;
 		emu_cycles(1);
 	}
+}
+
+static void proc_jp(cpu_context* ctx)
+{
+	goto_addr(ctx, ctx->fetch_data, false);
+}
+
+static void proc_jr(cpu_context* ctx)
+{
+	const char rel = static_cast<char>(ctx->fetch_data & 0xFF); // casting cause dest can be negative (to go backward)
+	const uint16_t addr = ctx->regs.pc + rel;
+	goto_addr(ctx, addr, false);
+}
+
+static void proc_call(cpu_context* ctx)
+{
+	goto_addr(ctx, ctx->fetch_data, true);
+}
+
+static void proc_rst(cpu_context* ctx)
+{
+	goto_addr(ctx, ctx->cur_inst->param, true);
+}
+
+static void proc_ret(cpu_context* ctx)
+{
+	if (ctx->cur_inst->cond != cond_type::CT_NONE)
+	{
+		emu_cycles(1);
+	}
+
+	if (check_cond(ctx))
+	{
+		const uint16_t lo = stack_pop();
+		emu_cycles(1);
+		const uint16_t hi = stack_pop();
+		emu_cycles(1);
+
+		const uint16_t n = (hi << 8) | lo;
+		ctx->regs.pc = n;
+
+		emu_cycles(1);
+	}
+}
+
+static void proc_reti(cpu_context *ctx)
+{
+	ctx->bInterrupt_master_enabled = true;
+	proc_ret(ctx);
 }
 
 static void proc_pop(cpu_context *ctx)
@@ -157,6 +211,11 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_DI, proc_di},
 	{in_type::IN_POP, proc_pop},
 	{in_type::IN_PUSH, proc_push},
+	{in_type::IN_JR, proc_jr},
+	{in_type::IN_CALL, proc_call},
+	{in_type::IN_RET, proc_ret},
+	{in_type::IN_RST, proc_rst},
+	{in_type::IN_RETI, proc_reti},
 	{in_type::IN_XOR, proc_xor}
 };
 
