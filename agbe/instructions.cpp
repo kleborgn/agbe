@@ -130,17 +130,27 @@ std::map<uint32_t, instruction> instructions = {
 	{0xAF, {in_type::IN_XOR, addr_mode::AM_R, reg_type::RT_A}},
 
     //0xCX
+    {0xC1, {in_type::IN_POP, addr_mode::AM_IMP, reg_type::RT_BC}},
 	{0xC3, {in_type::IN_JP, addr_mode::AM_D16}},
+    {0xC5, {in_type::IN_PUSH, addr_mode::AM_IMP, reg_type::RT_BC}},
+
+    //0xDX
+    {0xD1, {in_type::IN_POP, addr_mode::AM_IMP, reg_type::RT_DE}},
+    {0xD5, {in_type::IN_PUSH, addr_mode::AM_IMP, reg_type::RT_DE}},
 
 	//0xEX
     {0xE0, {in_type::IN_LDH, addr_mode::AM_A8_R, reg_type::RT_NONE, reg_type::RT_A}},
+    {0xE1, {in_type::IN_POP, addr_mode::AM_IMP, reg_type::RT_HL}},
     {0xE2, {in_type::IN_LD, addr_mode::AM_MR_R, reg_type::RT_C, reg_type::RT_A}},
+    {0xE5, {in_type::IN_PUSH, addr_mode::AM_IMP, reg_type::RT_HL}},
     {0xEA, {in_type::IN_LD, addr_mode::AM_A16_R, reg_type::RT_NONE, reg_type::RT_A}},
 
     //0xFX
     {0xF0, {in_type::IN_LDH, addr_mode::AM_R_A8, reg_type::RT_A}},
+    {0xF1, {in_type::IN_POP, addr_mode::AM_IMP, reg_type::RT_AF}},
     {0xF2, {in_type::IN_LD, addr_mode::AM_R_MR, reg_type::RT_A, reg_type::RT_C}},
 	{0xF3, {in_type::IN_DI}},
+    {0xF5, {in_type::IN_PUSH, addr_mode::AM_IMP, reg_type::RT_AF}},
     {0xFA, {in_type::IN_LD, addr_mode::AM_R_A16, reg_type::RT_A}},
 };
 

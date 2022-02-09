@@ -5,6 +5,7 @@
 #include "bus.h"
 #include "cpu.h"
 #include "emu.h"
+#include "stack.h"
 
 static void proc_none(cpu_context *ctx)
 {
@@ -39,8 +40,8 @@ static void proc_ld(cpu_context* ctx)
 
 	if (ctx->cur_inst->mode == addr_mode::AM_HL_SPR)
 	{
-		uint8_t hflag = (cpu_read_reg(ctx->cur_inst->reg_2) & 0xF) + (ctx->fetch_data & 0xF) >= 0x10;
-		uint8_t cflag = (cpu_read_reg(ctx->cur_inst->reg_2) & 0xFF) + (ctx->fetch_data & 0xFF) >= 0x100;
+		const uint8_t hflag = (cpu_read_reg(ctx->cur_inst->reg_2) & 0xF) + (ctx->fetch_data & 0xF) >= 0x10;
+		const uint8_t cflag = (cpu_read_reg(ctx->cur_inst->reg_2) & 0xFF) + (ctx->fetch_data & 0xFF) >= 0x100;
 
 		cpu_set_flags(ctx, 0, 0, hflag, cflag);
 		cpu_set_reg(ctx->cur_inst->reg_1, cpu_read_reg(ctx->cur_inst->reg_2) + static_cast<char>(ctx->fetch_data));
@@ -94,8 +95,8 @@ static void proc_xor(cpu_context *ctx)
 
 static bool check_cond(cpu_context* ctx)
 {
-	bool z = CPU_FLAG_Z;
-	bool c = CPU_FLAG_C;
+	const bool z = CPU_FLAG_Z;
+	const bool c = CPU_FLAG_C;
 
 	switch (ctx->cur_inst->cond)
 	{
@@ -117,6 +118,36 @@ static void proc_jp(cpu_context* ctx)
 	}
 }
 
+static void proc_pop(cpu_context *ctx)
+{
+	const uint16_t lo = stack_pop();
+	emu_cycles(1);
+	const uint16_t hi = stack_pop();
+	emu_cycles(1);
+
+	uint16_t n = (hi << 8) | lo;
+
+	cpu_set_reg(ctx->cur_inst->reg_1, n);
+
+	if (ctx->cur_inst->reg_1 == reg_type::RT_AF)
+	{
+		cpu_set_reg(ctx->cur_inst->reg_1, n & 0xFFF0);
+	}
+}
+
+static void proc_push(cpu_context* ctx)
+{
+	const uint8_t hi = (cpu_read_reg(ctx->cur_inst->reg_1) >> 8) & 0xFF;
+	emu_cycles(1);
+	stack_push(hi);
+
+	const uint8_t lo = cpu_read_reg(ctx->cur_inst->reg_2) & 0xFF;
+	emu_cycles(1);
+	stack_push(lo);
+
+	emu_cycles(1);
+}
+
 static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_NONE, proc_none},
 	{in_type::IN_NOP, proc_nop},
@@ -124,6 +155,8 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_LDH, proc_ldh},
 	{in_type::IN_JP, proc_jp},
 	{in_type::IN_DI, proc_di},
+	{in_type::IN_POP, proc_pop},
+	{in_type::IN_PUSH, proc_push},
 	{in_type::IN_XOR, proc_xor}
 };
 
