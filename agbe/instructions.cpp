@@ -15,7 +15,7 @@ std::map<uint32_t, instruction> instructions = {
     {0x04, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_B}},
 	{0x05, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_B}},
     {0x06, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_B}},
-
+    {0x07, {in_type::IN_RLCA}},
     {0x08, {in_type::IN_LD, addr_mode::AM_A16_R, reg_type::RT_NONE, reg_type::RT_SP}},
     {0x09, {in_type::IN_ADD, addr_mode::AM_R_R, reg_type::RT_HL, reg_type::RT_BC}},
     {0x0A, {in_type::IN_LD, addr_mode::AM_R_MR, reg_type::RT_A, reg_type::RT_BC}},
@@ -23,15 +23,17 @@ std::map<uint32_t, instruction> instructions = {
     {0x0C, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_C}},
     {0x0D, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_C}},
 	{0x0E, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_C}},
+    {0x0F, {in_type::IN_RRCA}},
 
     //0x1X
+    {0x10, {in_type::IN_STOP}},
     {0x11, {in_type::IN_LD, addr_mode::AM_R_D16, reg_type::RT_DE}},
     {0x12, {in_type::IN_LD, addr_mode::AM_MR_R, reg_type::RT_DE, reg_type::RT_A}},
     {0x13, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_DE}},
     {0x14, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_D}},
     {0x15, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_D}},
     {0x16, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_D}},
-
+    {0x17, {in_type::IN_RLA}},
     {0x18, {in_type::IN_JR, addr_mode::AM_D8}},
     {0x19, {in_type::IN_ADD, addr_mode::AM_R_R, reg_type::RT_HL, reg_type::RT_DE}},
     {0x1A, {in_type::IN_LD, addr_mode::AM_R_MR, reg_type::RT_A, reg_type::RT_DE}},
@@ -39,6 +41,7 @@ std::map<uint32_t, instruction> instructions = {
     {0x1C, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_E}},
     {0x1D, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_E}},
     {0x1E, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_E}},
+    {0x1F, {in_type::IN_RRA}},
 
     //0x2X
     {0x20, {in_type::IN_JR, addr_mode::AM_D8, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NZ}},
@@ -48,7 +51,7 @@ std::map<uint32_t, instruction> instructions = {
 	{0x24, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_H}},
     {0x25, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_H}},
     {0x26, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_H}},
-
+    {0x27, {in_type::IN_DAA}},
     {0x28, {in_type::IN_JR, addr_mode::AM_D8, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_Z}},
     {0x29, {in_type::IN_ADD, addr_mode::AM_R_R, reg_type::RT_HL, reg_type::RT_HL}},
     {0x2A, {in_type::IN_LD, addr_mode::AM_R_HLI, reg_type::RT_A, reg_type::RT_HL}},
@@ -56,6 +59,7 @@ std::map<uint32_t, instruction> instructions = {
     {0x2C, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_L}},
     {0x2D, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_L}},
     {0x2E, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_L}},
+    {0x2F, {in_type::IN_CPL}},
 
     //0x3X
     {0x30, {in_type::IN_JR, addr_mode::AM_D8, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NC}},
@@ -65,7 +69,7 @@ std::map<uint32_t, instruction> instructions = {
     {0x34, {in_type::IN_INC, addr_mode::AM_MR, reg_type::RT_HL}},
     {0x35, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_HL}},
     {0x36, {in_type::IN_LD, addr_mode::AM_MR_D8, reg_type::RT_HL}},
-
+    {0x37, {in_type::IN_SCF}},
     {0x38, {in_type::IN_JR, addr_mode::AM_D8, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_C}},
     {0x39, {in_type::IN_ADD, addr_mode::AM_R_R, reg_type::RT_HL, reg_type::RT_SP}},
     {0x3A, {in_type::IN_LD, addr_mode::AM_R_HLD, reg_type::RT_A, reg_type::RT_HL}},
@@ -73,6 +77,7 @@ std::map<uint32_t, instruction> instructions = {
     {0x3C, {in_type::IN_INC, addr_mode::AM_R, reg_type::RT_A}},
     {0x3D, {in_type::IN_DEC, addr_mode::AM_R, reg_type::RT_A}},
     {0x3E, {in_type::IN_LD, addr_mode::AM_R_D8, reg_type::RT_A}},
+    {0x3F, {in_type::IN_CCF}},
 
     //0x4X
     {0x40, {in_type::IN_LD, addr_mode::AM_R_R, reg_type::RT_B, reg_type::RT_B}},
@@ -243,7 +248,7 @@ std::map<uint32_t, instruction> instructions = {
 
     {0xD4, {in_type::IN_CALL, addr_mode::AM_D16, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NC}},
     {0xD5, {in_type::IN_PUSH, addr_mode::AM_IMP, reg_type::RT_DE}},
-
+    {0xD6, {in_type::IN_SUB, addr_mode::AM_D8}},
     {0xD7, {in_type::IN_RST, addr_mode::AM_IMP, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NONE, 0x10}},
     {0xD8, {in_type::IN_RET, addr_mode::AM_IMP, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_C}},
     {0xD9, {in_type::IN_RETI}},
@@ -251,6 +256,7 @@ std::map<uint32_t, instruction> instructions = {
 
 	{0xDC, {in_type::IN_CALL, addr_mode::AM_D16, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_C}},
 
+    {0xDE, {in_type::IN_SBC, addr_mode::AM_R_D8, reg_type::RT_A}},
     {0xDF, {in_type::IN_RST, addr_mode::AM_IMP, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NONE, 0x18}},
 
 	//0xEX
@@ -277,8 +283,10 @@ std::map<uint32_t, instruction> instructions = {
     {0xF5, {in_type::IN_PUSH, addr_mode::AM_IMP, reg_type::RT_AF}},
 	{0xF6, {in_type::IN_OR, addr_mode::AM_D8}},
     {0xF7, {in_type::IN_RST, addr_mode::AM_IMP, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NONE, 0x30}},
-
+	{0xF8, {in_type::IN_LD, addr_mode::AM_HL_SPR, reg_type::RT_HL, reg_type::RT_SP}},
+    {0xF9, {in_type::IN_LD, addr_mode::AM_R_R, reg_type::RT_SP, reg_type::RT_HL}},
     {0xFA, {in_type::IN_LD, addr_mode::AM_R_A16, reg_type::RT_A}},
+	{0xFB, {in_type::IN_EI}},
 
     {0xFE, {in_type::IN_CP, addr_mode::AM_D8}},
     {0xFF, {in_type::IN_RST, addr_mode::AM_IMP, reg_type::RT_NONE, reg_type::RT_NONE, cond_type::CT_NONE, 0x38}},

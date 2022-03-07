@@ -23,6 +23,11 @@ static void proc_di(cpu_context* ctx)
 	ctx->bInterrupt_master_enabled = false;
 }
 
+static void proc_ei(cpu_context *ctx)
+{
+	ctx->bIME = true;
+}
+
 static bool is_16_bits(reg_type rt)
 {
 	return rt >= reg_type::RT_AF;
@@ -471,6 +476,97 @@ static void proc_cb(cpu_context *ctx)
 	NOT_IMPLEMENTED
 }
 
+static void proc_rlca(cpu_context *ctx)
+{
+	//rotate A left
+	uint8_t u = ctx->regs.a;
+	bool c = (u >> 7) & 1;
+	u = (u << 1) | c;
+	ctx->regs.a = u;
+
+	cpu_set_flags(ctx, 0, 0, 0, c);
+}
+
+static void proc_rrca(cpu_context* ctx)
+{
+	//rotate A right
+	uint8_t b = ctx->regs.a & 1;
+	ctx->regs.a >>= 1;
+	ctx->regs.a |= (b << 7);
+
+	cpu_set_flags(ctx, 0, 0, 0, b);
+}
+
+static void proc_rla(cpu_context* ctx)
+{
+	//rotate A left through carry
+	uint8_t u = ctx->regs.a;
+	uint8_t cf = CPU_FLAG_C;
+	uint8_t c = (u >> 7) & 1;
+
+	ctx->regs.a = (u << 1) | cf;
+	cpu_set_flags(ctx, 0, 0, 0, c);
+}
+
+static void proc_rra(cpu_context* ctx)
+{
+	//rotate A right through carry
+	uint8_t c = CPU_FLAG_C;
+	uint8_t newc = ctx->regs.a & 1;
+
+	ctx->regs.a >>= 1;
+	ctx->regs.a |= (c << 7);
+
+	cpu_set_flags(ctx, 0, 0, 0, newc);
+}
+
+static void proc_stop(cpu_context *ctx)
+{
+	printf("[+] STOP\n");
+	NOT_IMPLEMENTED
+}
+
+static void proc_daa(cpu_context *ctx)
+{
+	uint8_t u = 0;
+	int fc = 0;
+
+	if (CPU_FLAG_H || (!CPU_FLAG_N && (ctx->regs.a & 0xF) > 9))
+	{
+		u = 6;
+	}
+
+	if (CPU_FLAG_C || (!CPU_FLAG_N && ctx->regs.a > 0x99))
+	{
+		u |= 0x60;
+		fc = 1;
+	}
+
+	ctx->regs.a += CPU_FLAG_N ? -u : u;
+
+	cpu_set_flags(ctx, ctx->regs.a == 0, -1, 0, fc);
+}
+
+static void proc_cpl(cpu_context* ctx)
+{
+	ctx->regs.a = ~ctx->regs.a;
+	cpu_set_flags(ctx, -1, 1, 1, -1);
+}
+
+static void proc_scf(cpu_context* ctx)
+{
+	cpu_set_flags(ctx, -1, 0, 0, 1);
+}
+
+static void proc_ccf(cpu_context* ctx)
+{
+	cpu_set_flags(ctx, -1, 0, 0, CPU_FLAG_C ^ 1);
+}
+
+static void proc_halt(cpu_context *ctx)
+{
+	ctx->bHalted = true;
+}
 static void proc_and(cpu_context *ctx)
 {
 	ctx->regs.a &= ctx->fetch_data;
@@ -503,6 +599,7 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_LDH, proc_ldh},
 	{in_type::IN_JP, proc_jp},
 	{in_type::IN_DI, proc_di},
+	{in_type::IN_EI, proc_ei},
 	{in_type::IN_POP, proc_pop},
 	{in_type::IN_PUSH, proc_push},
 	{in_type::IN_JR, proc_jr},
@@ -519,6 +616,16 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_OR, proc_or},
 	{in_type::IN_CP, proc_cp},
 	{in_type::IN_CB, proc_cb},
+	{in_type::IN_RRCA, proc_rrca},
+	{in_type::IN_RLCA, proc_rlca},
+	{in_type::IN_RRA, proc_rra},
+	{in_type::IN_RLA, proc_rla},
+	{in_type::IN_STOP, proc_stop},
+	{in_type::IN_HALT, proc_halt},
+	{in_type::IN_DAA, proc_daa},
+	{in_type::IN_CPL, proc_cpl},
+	{in_type::IN_SCF, proc_scf},
+	{in_type::IN_CCF, proc_ccf},
 	{in_type::IN_RETI, proc_reti},
 	{in_type::IN_XOR, proc_xor}
 };
