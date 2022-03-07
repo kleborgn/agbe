@@ -92,12 +92,6 @@ void cpu_set_flags(cpu_context *ctx, char z, char n, char h, char c)
 	}
 }
 
-static void proc_xor(cpu_context *ctx)
-{
-	ctx->regs.a ^= ctx->fetch_data & 0xFF;
-	cpu_set_flags(ctx, ctx->regs.a, 0, 0, 0);
-}
-
 static bool check_cond(cpu_context* ctx)
 {
 	const bool z = CPU_FLAG_Z;
@@ -279,8 +273,8 @@ static void proc_sub(cpu_context *ctx)
 	uint16_t val = cpu_read_reg(ctx->cur_inst->reg_1) - ctx->fetch_data;
 
 	int z = val == 0;
-	int h = ((int)cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) - ((int)ctx->fetch_data & 0xF) < 0;
-	int c = ((int)cpu_read_reg(ctx->cur_inst->reg_1)) - ((int)ctx->fetch_data) < 0;
+	int h = (static_cast<int>(cpu_read_reg(ctx->cur_inst->reg_1)) & 0xF) - (static_cast<int>(ctx->fetch_data) & 0xF) < 0;
+	int c = static_cast<int>(cpu_read_reg(ctx->cur_inst->reg_1)) - static_cast<int>(ctx->fetch_data) < 0;
 
 	cpu_set_reg(ctx->cur_inst->reg_1, val);
 	cpu_set_flags(ctx, z, 1, h, c);
@@ -291,8 +285,8 @@ static void proc_sbc(cpu_context* ctx)
 	uint8_t val = ctx->fetch_data + CPU_FLAG_C;
 
 	int z = cpu_read_reg(ctx->cur_inst->reg_1) - val == 0;
-	int h = ((int)cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) - ((int)ctx->fetch_data & 0xF) - ((int)CPU_FLAG_C) < 0;
-	int c = ((int)cpu_read_reg(ctx->cur_inst->reg_1)) - ((int)ctx->fetch_data) - ((int)CPU_FLAG_C) < 0;
+	int h = (static_cast<int>(cpu_read_reg(ctx->cur_inst->reg_1)) & 0xF) - (static_cast<int>(ctx->fetch_data) & 0xF) - ((int)CPU_FLAG_C) < 0;
+	int c = static_cast<int>(cpu_read_reg(ctx->cur_inst->reg_1)) - static_cast<int>(ctx->fetch_data) - ((int)CPU_FLAG_C) < 0;
 
 	cpu_set_reg(ctx->cur_inst->reg_1, cpu_read_reg(ctx->cur_inst->reg_1) - val);
 	cpu_set_flags(ctx, z, 1, h, c);
@@ -337,6 +331,171 @@ static void proc_add(cpu_context *ctx)
 	cpu_set_flags(ctx, z, 0, h, c);
 }
 
+reg_type rt_lookup[] = {
+	reg_type::RT_B,
+	reg_type::RT_C,
+	reg_type::RT_D,
+	reg_type::RT_E,
+	reg_type::RT_H,
+	reg_type::RT_L,
+	reg_type::RT_HL,
+	reg_type::RT_A
+};
+
+reg_type decode_reg(uint8_t reg)
+{
+	if (reg > 0b111)
+	{
+		return reg_type::RT_NONE;
+	}
+
+	return rt_lookup[reg];
+}
+
+static void proc_cb(cpu_context *ctx)
+{
+	uint8_t op = ctx->fetch_data;
+	reg_type reg = decode_reg(op & 0b111);
+	uint8_t bit = (op >> 3) & 0b111;
+	uint8_t bit_op = (op >> 6) & 0b11;
+	uint8_t reg_val = cpu_read_reg8(reg);
+
+	emu_cycles(1);
+
+	if (reg == reg_type::RT_HL)
+	{
+		emu_cycles(2);
+	}
+
+	switch (bit_op)
+	{
+	case 1:
+		//BIT
+		cpu_set_flags(ctx, !(reg_val & (1 << bit)), 0, 1, -1);
+		return;
+	case 2:
+		//RST
+		reg_val &= ~(1 << bit);
+		cpu_set_reg8(reg, reg_val);
+		return;
+	case 3:
+		//SET
+		reg_val |= (1 << bit);
+		cpu_set_reg8(reg, reg_val);
+		return;
+	}
+
+	bool flagc = CPU_FLAG_C;
+
+	switch (bit)
+	{
+	case 0:
+	{
+		//RLC, rotate left
+		bool setc = false;
+		uint8_t result = (reg_val << 1) & 0xFF;
+
+			if ((reg_val & (1 << 7)) != 0)
+			{
+				result |= 1;
+				setc = true;
+			}
+
+			cpu_set_reg8(reg, result);
+			cpu_set_flags(ctx, result == 0, false, false, setc);
+	} return;
+	case 1:
+	{
+		//RRC, rotate right
+		uint8_t old = reg_val;
+		reg_val >>= 1;
+		reg_val |= (old << 7);
+
+		cpu_set_reg8(reg, reg_val);
+		cpu_set_flags(ctx, !reg_val, false, false, old & 1);
+	} return;
+	case 2:
+	{
+		//RL, rotate left through carry
+		uint8_t old = reg_val;
+		reg_val <<= 1;
+		reg_val |= flagc;
+
+		cpu_set_reg8(reg, reg_val);
+		cpu_set_flags(ctx, !reg_val, false, false, !!(old & 0x80));
+	} return;
+	case 3:
+	{
+		//RR, rotate right through carry
+		uint8_t old = reg_val;
+		reg_val >>= 1;
+
+		reg_val |= (flagc << 7);
+
+		cpu_set_reg8(reg, reg_val);
+		cpu_set_flags(ctx, !reg_val, false, false, old & 1);
+	} return;
+	case 4:
+	{
+		//SLA, shift left arithmetic (b0=0)
+		uint8_t old = reg_val;
+		reg_val <<= 1;
+
+		cpu_set_reg8(reg, reg_val);
+		cpu_set_flags(ctx, !reg_val, false, false, !!(old & 0x80));
+	} return;
+	case 5:
+	{
+		//SRA, shift right arithmetic (b7=b7)
+		uint8_t u = static_cast<int8_t>(reg_val) >> 1;
+		cpu_set_reg8(reg, u);
+		cpu_set_flags(ctx, !u, 0, 0, reg_val & 1);
+	} return;
+	case 6:
+	{
+		//SWAP, exchange low/hi-nibble
+		reg_val = ((reg_val & 0xF0) >> 4) | ((reg_val & 0xF) << 4);
+		cpu_set_reg8(reg, reg_val);
+		cpu_set_flags(ctx, reg_val == 0, false, false, false);
+	} return;
+	case 7:
+	{
+		//SRL, shift right logical (b7=0)
+		uint8_t u = reg_val >> 1;
+		cpu_set_reg8(reg, u);
+		cpu_set_flags(ctx, !u, 0, 0, reg_val & 1);
+	} return;
+	}
+
+	printf("[-] Invalid CB: %02X\n", op);
+	NOT_IMPLEMENTED
+}
+
+static void proc_and(cpu_context *ctx)
+{
+	ctx->regs.a &= ctx->fetch_data;
+	cpu_set_flags(ctx, ctx->regs.a == 0, 0, 1, 0);
+}
+
+static void proc_xor(cpu_context* ctx)
+{
+	ctx->regs.a ^= ctx->fetch_data & 0xFF;
+	cpu_set_flags(ctx, ctx->regs.a == 0, 0, 0, 0);
+}
+
+static void proc_or(cpu_context* ctx)
+{
+	ctx->regs.a |= ctx->fetch_data & 0xFF;
+	cpu_set_flags(ctx, ctx->regs.a == 0, 0, 0, 0);
+}
+
+static void proc_cp(cpu_context *ctx)
+{
+	int n = static_cast<int>(ctx->regs.a) - static_cast<int>(ctx->fetch_data);
+
+	cpu_set_flags(ctx, n == 0, 1, (static_cast<int>(ctx->regs.a) & 0x0F) - (static_cast<int>(ctx->fetch_data) & 0x0F) < 0, n < 0);
+}
+
 static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_NONE, proc_none},
 	{in_type::IN_NOP, proc_nop},
@@ -356,6 +515,10 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_ADC, proc_adc},
 	{in_type::IN_SUB, proc_sub},
 	{in_type::IN_SBC, proc_sbc},
+	{in_type::IN_AND, proc_and},
+	{in_type::IN_OR, proc_or},
+	{in_type::IN_CP, proc_cp},
+	{in_type::IN_CB, proc_cb},
 	{in_type::IN_RETI, proc_reti},
 	{in_type::IN_XOR, proc_xor}
 };
