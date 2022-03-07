@@ -7,7 +7,7 @@
 #include "emu.h"
 #include "instructions.h"
 
-cpu_context ctx = {0};
+cpu_context ctx = {{0}};
 
 //utils
 
@@ -26,15 +26,17 @@ uint16_t cpu_read_reg(const reg_type rt) {
 	case reg_type::RT_H: return ctx.regs.h;
 	case reg_type::RT_L: return ctx.regs.l;
 
-	case reg_type::RT_AF: return reverse(*((uint16_t*)&ctx.regs.a));
-	case reg_type::RT_BC: return reverse(*((uint16_t*)&ctx.regs.b));
-	case reg_type::RT_DE: return reverse(*((uint16_t*)&ctx.regs.d));
-	case reg_type::RT_HL: return reverse(*((uint16_t*)&ctx.regs.h));
+	case reg_type::RT_AF: return reverse(*reinterpret_cast<uint16_t*>(&ctx.regs.a));
+	case reg_type::RT_BC: return reverse(*reinterpret_cast<uint16_t*>(&ctx.regs.b));
+	case reg_type::RT_DE: return reverse(*reinterpret_cast<uint16_t*>(&ctx.regs.d));
+	case reg_type::RT_HL: return reverse(*reinterpret_cast<uint16_t*>(&ctx.regs.h));
 
 	case reg_type::RT_PC: return ctx.regs.pc;
 	case reg_type::RT_SP: return ctx.regs.sp;
-	default: return 0;
+
+	case reg_type::RT_NONE: return 0;
 	}
+	return 0;
 }
 
 void cpu_set_reg(reg_type rt, uint16_t val)
@@ -42,6 +44,7 @@ void cpu_set_reg(reg_type rt, uint16_t val)
 	switch (rt)
 	{
 	case reg_type::RT_A: ctx.regs.a = val & 0xFF; break;
+	case reg_type::RT_F: ctx.regs.f = val & 0xFF; break;
 	case reg_type::RT_B: ctx.regs.b = val & 0xFF; break;
 	case reg_type::RT_C: ctx.regs.c = val & 0xFF; break;
 	case reg_type::RT_D: ctx.regs.d = val & 0xFF; break;
@@ -49,10 +52,10 @@ void cpu_set_reg(reg_type rt, uint16_t val)
 	case reg_type::RT_H: ctx.regs.h = val & 0xFF; break;
 	case reg_type::RT_L: ctx.regs.l = val & 0xFF; break;
 
-	case reg_type::RT_AF: *((uint16_t*)&ctx.regs.a) = reverse(val); break;
-	case reg_type::RT_BC: *((uint16_t*)&ctx.regs.b) = reverse(val); break;
-	case reg_type::RT_DE: *((uint16_t*)&ctx.regs.d) = reverse(val); break;
-	case reg_type::RT_HL: *((uint16_t*)&ctx.regs.h) = reverse(val); break;
+	case reg_type::RT_AF: *reinterpret_cast<uint16_t*>(&ctx.regs.a) = reverse(val); break;
+	case reg_type::RT_BC: *reinterpret_cast<uint16_t*>(&ctx.regs.b) = reverse(val); break;
+	case reg_type::RT_DE: *reinterpret_cast<uint16_t*>(&ctx.regs.d) = reverse(val); break;
+	case reg_type::RT_HL: *reinterpret_cast<uint16_t*>(&ctx.regs.h) = reverse(val); break;
 
 	case reg_type::RT_PC: ctx.regs.pc = val; break;
 	case reg_type::RT_SP: ctx.regs.sp = val; break;
@@ -252,8 +255,7 @@ static void fetch_data()
 
 	default:
 		std::cout << "[-] Unknown addressing mode: " << ctx.cur_inst->mode << std::endl;
-		exit(-7);
-		return;
+		_exit(-7);
 	}
 }
 

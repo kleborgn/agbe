@@ -23,11 +23,16 @@ static void proc_di(cpu_context* ctx)
 	ctx->bInterrupt_master_enabled = false;
 }
 
+static bool is_16_bits(reg_type rt)
+{
+	return rt >= reg_type::RT_AF;
+}
+
 static void proc_ld(cpu_context* ctx)
 {
 	if (ctx->bDest)
 	{
-		if (ctx->cur_inst->reg_2 >= reg_type::RT_AF) // if 16 bits register
+		if (is_16_bits(ctx->cur_inst->reg_2)) // if 16 bits register
 		{
 			emu_cycles(1);
 			bus_write16(ctx->mem_dest, ctx->fetch_data);
@@ -202,6 +207,101 @@ static void proc_push(cpu_context* ctx)
 	emu_cycles(1);
 }
 
+static void proc_inc(cpu_context *ctx)
+{
+	uint16_t val = cpu_read_reg(ctx->cur_inst->reg_1) + 1;
+
+	if (is_16_bits(ctx->cur_inst->reg_1))
+	{
+		emu_cycles(1);
+	}
+
+	if (ctx->cur_inst->reg_1 == reg_type::RT_HL && ctx->cur_inst->mode == addr_mode::AM_MR)
+	{
+		val = bus_read(cpu_read_reg(reg_type::RT_HL)) + 1;
+		val &= 0xFF;
+		bus_write(cpu_read_reg(reg_type::RT_HL), val);
+	} else
+	{
+		cpu_set_reg(ctx->cur_inst->reg_1, val);
+		val = cpu_read_reg(ctx->cur_inst->reg_1);
+	}
+
+	if ((ctx->cur_opcode & 0x03) == 0x03)
+	{
+		return;
+	}
+
+	cpu_set_flags(ctx, val == 0, 0, (val & 0x0F) == 0, -1);
+}
+
+static void proc_dec(cpu_context* ctx)
+{
+	uint16_t val = cpu_read_reg(ctx->cur_inst->reg_1) - 1;
+
+	if (is_16_bits(ctx->cur_inst->reg_1))
+	{
+		emu_cycles(1);
+	}
+
+	if (ctx->cur_inst->reg_1 == reg_type::RT_HL && ctx->cur_inst->mode == addr_mode::AM_MR)
+	{
+		val = bus_read(cpu_read_reg(reg_type::RT_HL)) - 1;
+		bus_write(cpu_read_reg(reg_type::RT_HL), val);
+	}
+	else
+	{
+		cpu_set_reg(ctx->cur_inst->reg_1, val);
+		val = cpu_read_reg(ctx->cur_inst->reg_1);
+	}
+
+	if ((ctx->cur_opcode & 0x0B) == 0x0B)
+	{
+		return;
+	}
+
+	cpu_set_flags(ctx, val == 0, 1, (val & 0x0F) == 0x0F, -1);
+}
+
+static void proc_add(cpu_context *ctx)
+{
+	uint32_t val = cpu_read_reg(ctx->cur_inst->reg_1) + ctx->fetch_data;
+
+	bool is_16bits = is_16_bits(ctx->cur_inst->reg_1);
+
+	if (is_16bits)
+	{
+		emu_cycles(1);
+	}
+
+	if (ctx->cur_inst->reg_1 == reg_type::RT_SP)
+	{
+		val = cpu_read_reg(ctx->cur_inst->reg_1) + static_cast<char>(ctx->fetch_data);
+	}
+
+	int z = (val & 0xFF) == 0;
+	int h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) + (ctx->fetch_data & 0xF) >= 0x10;
+	int c = (int)(cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF) + (int)(ctx->fetch_data & 0xFF) > 0x100;
+
+	if (is_16bits)
+	{
+		z = -1;
+		h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xFFF) + (ctx->fetch_data & 0xFFF) > 0x1000;
+		uint32_t n = static_cast<uint32_t>(cpu_read_reg(ctx->cur_inst->reg_1)) + static_cast<uint32_t>(ctx->fetch_data);
+		c = n >= 0x10000;
+	}
+
+	if (ctx->cur_inst->reg_1 == reg_type::RT_SP)
+	{
+		z = 0;
+		h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) + (ctx->fetch_data & 0xF) >= 0x10;
+		c = (int)(cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF) + (int)(ctx->fetch_data & 0xFF) > 0x100;
+	}
+
+	cpu_set_reg(ctx->cur_inst->reg_1, val & 0xFFFF);
+	cpu_set_flags(ctx, z, 0, h, c);
+}
+
 static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_NONE, proc_none},
 	{in_type::IN_NOP, proc_nop},
@@ -215,6 +315,9 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_CALL, proc_call},
 	{in_type::IN_RET, proc_ret},
 	{in_type::IN_RST, proc_rst},
+	{in_type::IN_DEC, proc_dec},
+	{in_type::IN_INC, proc_inc},
+	{in_type::IN_ADD, proc_add},
 	{in_type::IN_RETI, proc_reti},
 	{in_type::IN_XOR, proc_xor}
 };
