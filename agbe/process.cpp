@@ -274,6 +274,30 @@ static void proc_adc(cpu_context *ctx)
 	cpu_set_flags(ctx, ctx->regs.a == 0, 0, (a & 0xF) + (u & 0xF) + c > 0xF, a + u + c > 0xFF);
 }
 
+static void proc_sub(cpu_context *ctx)
+{
+	uint16_t val = cpu_read_reg(ctx->cur_inst->reg_1) - ctx->fetch_data;
+
+	int z = val == 0;
+	int h = ((int)cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) - ((int)ctx->fetch_data & 0xF) < 0;
+	int c = ((int)cpu_read_reg(ctx->cur_inst->reg_1)) - ((int)ctx->fetch_data) < 0;
+
+	cpu_set_reg(ctx->cur_inst->reg_1, val);
+	cpu_set_flags(ctx, z, 1, h, c);
+}
+
+static void proc_sbc(cpu_context* ctx)
+{
+	uint8_t val = ctx->fetch_data + CPU_FLAG_C;
+
+	int z = cpu_read_reg(ctx->cur_inst->reg_1) - val == 0;
+	int h = ((int)cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) - ((int)ctx->fetch_data & 0xF) - ((int)CPU_FLAG_C) < 0;
+	int c = ((int)cpu_read_reg(ctx->cur_inst->reg_1)) - ((int)ctx->fetch_data) - ((int)CPU_FLAG_C) < 0;
+
+	cpu_set_reg(ctx->cur_inst->reg_1, cpu_read_reg(ctx->cur_inst->reg_1) - val);
+	cpu_set_flags(ctx, z, 1, h, c);
+}
+
 static void proc_add(cpu_context *ctx)
 {
 	uint32_t val = cpu_read_reg(ctx->cur_inst->reg_1) + ctx->fetch_data;
@@ -292,12 +316,12 @@ static void proc_add(cpu_context *ctx)
 
 	int z = (val & 0xFF) == 0;
 	int h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xF) + (ctx->fetch_data & 0xF) >= 0x10;
-	int c = (int)(cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF) + (int)(ctx->fetch_data & 0xFF) > 0x100;
+	int c = (int)(cpu_read_reg(ctx->cur_inst->reg_1) & 0xFF) + (int)(ctx->fetch_data & 0xFF) >= 0x100;
 
 	if (is_16bits)
 	{
 		z = -1;
-		h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xFFF) + (ctx->fetch_data & 0xFFF) > 0x1000;
+		h = (cpu_read_reg(ctx->cur_inst->reg_1) & 0xFFF) + (ctx->fetch_data & 0xFFF) >= 0x1000;
 		uint32_t n = static_cast<uint32_t>(cpu_read_reg(ctx->cur_inst->reg_1)) + static_cast<uint32_t>(ctx->fetch_data);
 		c = n >= 0x10000;
 	}
@@ -329,6 +353,9 @@ static std::map<in_type, IN_PROC> processors = {
 	{in_type::IN_DEC, proc_dec},
 	{in_type::IN_INC, proc_inc},
 	{in_type::IN_ADD, proc_add},
+	{in_type::IN_ADC, proc_adc},
+	{in_type::IN_SUB, proc_sub},
+	{in_type::IN_SBC, proc_sbc},
 	{in_type::IN_RETI, proc_reti},
 	{in_type::IN_XOR, proc_xor}
 };
