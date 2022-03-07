@@ -63,6 +63,49 @@ void cpu_set_reg(reg_type rt, uint16_t val)
 	}
 }
 
+uint8_t cpu_read_reg8(reg_type rt)
+{
+	switch (rt)
+	{
+	case reg_type::RT_A: return ctx.regs.a;
+	case reg_type::RT_F: return ctx.regs.f;
+	case reg_type::RT_B: return ctx.regs.b;
+	case reg_type::RT_C: return ctx.regs.c;
+	case reg_type::RT_D: return ctx.regs.d;
+	case reg_type::RT_E: return ctx.regs.e;
+	case reg_type::RT_H: return ctx.regs.h;
+	case reg_type::RT_L: return ctx.regs.l;
+	case reg_type::RT_HL:
+		{
+		return bus_read(cpu_read_reg(reg_type::RT_HL));
+		}
+		default:
+			printf("[-] Invalid reg8: %d\n", rt);
+			NOT_IMPLEMENTED
+	}
+}
+
+void cpu_set_reg8(reg_type rt, uint8_t val)
+{
+	switch (rt)
+	{
+	case reg_type::RT_A: ctx.regs.a = val & 0xFF; break;
+	case reg_type::RT_F: ctx.regs.f = val & 0xFF; break;
+	case reg_type::RT_B: ctx.regs.b = val & 0xFF; break;
+	case reg_type::RT_C: ctx.regs.c = val & 0xFF; break;
+	case reg_type::RT_D: ctx.regs.d = val & 0xFF; break;
+	case reg_type::RT_E: ctx.regs.e = val & 0xFF; break;
+	case reg_type::RT_H: ctx.regs.h = val & 0xFF; break;
+	case reg_type::RT_L: ctx.regs.l = val & 0xFF; break;
+	case reg_type::RT_HL: bus_write(cpu_read_reg(reg_type::RT_HL), val); break;
+		default:
+			printf("[-] Invalid reg8: %d\n", rt);
+		NOT_IMPLEMENTED
+	}
+}
+
+
+
 cpu_registers* cpu_get_regs()
 {
 	return &ctx.regs;

@@ -61,3 +61,6 @@ void cpu_set_flags(cpu_context* ctx, char z, char n, char h, char c);
 
 uint8_t cpu_get_ie_register();
 void cpu_set_ie_register(uint8_t value);
+
+uint8_t cpu_read_reg8(reg_type rt);
+void cpu_set_reg8(reg_type rt, uint8_t val);
