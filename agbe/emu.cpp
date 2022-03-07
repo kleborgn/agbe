@@ -2,11 +2,17 @@
 #include "emu.h"
 
 #include <iostream>
-#include <SDL.h>
-#include <SDL_ttf.h>
+#include <thread>
 
 #include "cart.h"
 #include "cpu.h"
+#include "ui.h"
+
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
 
 static emu_context ctx;
 
@@ -15,33 +21,8 @@ emu_context* emu_get_context()
 	return &ctx;
 }
 
-void delay(uint32_t ms)
+int cpu_run()
 {
-	SDL_Delay(ms);
-}
-
-int emu_run(int argc, char** argv)
-{
-	if (argc < 2)
-	{
-		std::cout << "Usage: agbe <rom_file>" << std::endl;
-		return -1;
-	}
-
-	if (!cart_load(argv[1]))
-	{
-		std::cout << "[-] Failed to load ROM file: " << argv[1] << std::endl;
-		return -2;
-	}
-
-	std::cout << "[+] ROM file loaded." << std::endl;
-
-	SDL_Init(SDL_INIT_VIDEO);
-	std::cout << "[+] SDL init done." << std::endl;
-
-	TTF_Init();
-	std::cout << "[+] SDL TTF init done." << std::endl;
-
 	cpu_init();
 
 	ctx.bRunning = true;
@@ -64,6 +45,36 @@ int emu_run(int argc, char** argv)
 
 		ctx.ticks++;
 	}
+
+	return 0;
+}
+
+int emu_run(int argc, char** argv)
+{
+	if (argc < 2)
+	{
+		std::cout << "Usage: agbe <rom_file>" << std::endl;
+		return -1;
+	}
+
+	if (!cart_load(argv[1]))
+	{
+		std::cout << "[-] Failed to load ROM file: " << argv[1] << std::endl;
+		return -2;
+	}
+
+	std::cout << "[+] ROM file loaded." << std::endl;
+
+	ui_init();
+
+	std::thread t1(cpu_run);
+
+	while(!ctx.bDie)
+	{
+		Sleep(1000);
+		ui_handle_events();
+	}
+
 	return 0;
 }
 

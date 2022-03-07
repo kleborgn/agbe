@@ -6,6 +6,7 @@
 #include "bus.h"
 #include "emu.h"
 #include "instructions.h"
+#include "interrupts.h"
 
 cpu_context ctx = {{0}};
 
@@ -342,7 +343,27 @@ bool cpu_step() {
 		}
 
 		execute();
+	} else
+	{
+		emu_cycles(1);
+
+		if (ctx.int_flags)
+		{
+			ctx.bHalted = false;
+		}
 	}
+
+	if (ctx.bInterrupt_master_enabled)
+	{
+		cpu_handle_interrupts(&ctx);
+		ctx.bIME = false;
+	}
+
+	if (ctx.bIME)
+	{
+		ctx.bInterrupt_master_enabled = true;
+	}
+
     return true;
 }
 
@@ -355,4 +376,15 @@ void cpu_set_ie_register(uint8_t value)
 {
 	ctx.ie_register = value;
 }
+
+uint8_t cpu_get_int_flags()
+{
+	return ctx.int_flags;
+}
+
+void cpu_set_int_flags(uint8_t value)
+{
+	ctx.int_flags = value;
+}
+
 

@@ -5,6 +5,7 @@
 typedef struct {
 	bool bPaused;
 	bool bRunning;
+	bool bDie;
 	uint64_t ticks;
 } emu_context;
 

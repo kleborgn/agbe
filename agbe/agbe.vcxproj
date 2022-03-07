@@ -158,11 +158,13 @@
     <ClInclude Include="cpu.h" />
     <ClInclude Include="emu.h" />
     <ClInclude Include="instructions.h" />
+    <ClInclude Include="interrupts.h" />
     <ClInclude Include="ppu.h" />
     <ClInclude Include="ram.h" />
     <ClInclude Include="stack.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="timer.h" />
+    <ClInclude Include="ui.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bus.cpp" />
@@ -170,6 +172,7 @@
     <ClCompile Include="cpu.cpp" />
     <ClCompile Include="emu.cpp" />
     <ClCompile Include="instructions.cpp" />
+    <ClCompile Include="interrupts.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ppu.cpp" />
     <ClCompile Include="process.cpp" />
@@ -179,6 +182,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="timer.cpp" />
+    <ClCompile Include="ui.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -10,6 +10,8 @@
 #define BETWEEN(a, b, c) ((a >= b) && (a <= c))
 
 #define CPU_FLAG_Z BIT(ctx->regs.f, 7)
+#define CPU_FLAG_N BIT(ctx->regs.f, 6)
+#define CPU_FLAG_H BIT(ctx->regs.f, 5)
 #define CPU_FLAG_C BIT(ctx->regs.f, 4)
 
 #define NOT_IMPLEMENTED { fprintf(stderr, "NOT YET IMPLEMENTED\n"); exit(-5); }
@@ -42,7 +44,9 @@ typedef struct
 	bool bStepping;
 
 	bool bInterrupt_master_enabled;
+	bool bIME;
 	uint8_t ie_register;
+	uint8_t int_flags;
 } cpu_context;
 
 cpu_registers* cpu_get_regs();
@@ -64,3 +68,6 @@ void cpu_set_ie_register(uint8_t value);
 
 uint8_t cpu_read_reg8(reg_type rt);
 void cpu_set_reg8(reg_type rt, uint8_t val);
+
+uint8_t cpu_get_int_flags();
+void cpu_set_int_flags(uint8_t value);
