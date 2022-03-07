@@ -263,6 +263,17 @@ static void proc_dec(cpu_context* ctx)
 	cpu_set_flags(ctx, val == 0, 1, (val & 0x0F) == 0x0F, -1);
 }
 
+static void proc_adc(cpu_context *ctx)
+{
+	uint16_t u = ctx->fetch_data;
+	uint16_t a = ctx->regs.a;
+	uint16_t c = CPU_FLAG_C;
+
+	ctx->regs.a = (a + u + c) & 0xFF;
+
+	cpu_set_flags(ctx, ctx->regs.a == 0, 0, (a & 0xF) + (u & 0xF) + c > 0xF, a + u + c > 0xFF);
+}
+
 static void proc_add(cpu_context *ctx)
 {
 	uint32_t val = cpu_read_reg(ctx->cur_inst->reg_1) + ctx->fetch_data;
